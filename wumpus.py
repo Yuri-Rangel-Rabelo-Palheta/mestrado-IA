@@ -1,39 +1,49 @@
 import random
 
 class WumpusMundo:
-    def __init__(self, tamanho=4):
+    def __init__(self, tamanho = 4, num_buracos = 2):
         self.tamanho = tamanho
-        self.posicao_wumpus = self._gerar_posicao_aleatoria()
-        self.posicao_ouro = self._gerar_posicao_aleatoria()
-        self.posicao_buracos = [self._gerar_posicao_aleatoria() for _ in range(tamanho)]
+        self.num_buracos = num_buracos
         self.posicao_jogador = (0, 0)
+        self.posicao_wumpus = None  # Inicialize como None
+        self.posicao_ouro = None  # Inicialize como None
+        self.posicao_buracos = []  # Inicialize como lista vazia
         self.fim_jogo = False
         self.pontuacao = 0
+        
+        # Agora defina as posições evitando colisões
+        self.posicao_wumpus = self._gerar_posicao_aleatoria()
+        self.posicao_ouro = self._gerar_posicao_aleatoria()
+        self.posicao_buracos = [self._gerar_posicao_aleatoria() for _ in range(num_buracos)]
 
     def _gerar_posicao_aleatoria(self):
-        return (random.randint(0, self.tamanho - 1), random.randint(0, self.tamanho - 1))
+        while True:
+            posicao = (random.randint(0, self.tamanho - 1), random.randint(0, self.tamanho - 1))
+            if posicao != (0, 0) and posicao != self.posicao_wumpus and posicao != self.posicao_ouro and posicao not in self.posicao_buracos:
+                return posicao
 
     def _checar_adjacentes(self, posicao):
-        adjacentes = []
+        adjacentes = {}
         x, y = posicao
         if x > 0:
-            adjacentes.append((x - 1, y))
+            adjacentes['cima'] = (x - 1, y)
         if x < self.tamanho - 1:
-            adjacentes.append((x + 1, y))
+            adjacentes['baixo'] = (x + 1, y)
         if y > 0:
-            adjacentes.append((x, y - 1))
+            adjacentes['esquerda'] = (x, y - 1)
         if y < self.tamanho - 1:
-            adjacentes.append((x, y + 1))
+            adjacentes['direita'] = (x, y + 1)
         return adjacentes
 
     def _checar_vizinhanca(self, posicao):
-        if posicao == self.posicao_wumpus:
-            print("Você sente um cheiro horrível!")
-        for buraco in self.posicao_buracos:
-            if buraco in self._checar_adjacentes(posicao):
-                print("Você sente uma brisa suave!")
-        if posicao == self.posicao_ouro:
-            print("Você vê um brilho radiante!")
+        adjacentes = self._checar_adjacentes(posicao)
+        for direcao, adj_pos in adjacentes.items():
+            if adj_pos == self.posicao_wumpus:
+                print(f"Você sente um cheiro horrível!") # vindo do {direcao}!")
+            if adj_pos == self.posicao_ouro:
+                print(f"Você vê um brilho radiante!") #vindo do {direcao}!")
+            if adj_pos in self.posicao_buracos:
+                print(f"Você sente uma brisa suave!") #vindo do {direcao}!")
 
     def mover(self, direcao):
         x, y = self.posicao_jogador
@@ -57,6 +67,9 @@ class WumpusMundo:
             self.pontuacao += 100
             self.fim_jogo = True
 
+    def verificar_vizinhanca(self):
+        self._checar_vizinhanca(self.posicao_jogador)
+
     def mostrar(self):
         for i in range(self.tamanho):
             for j in range(self.tamanho):
@@ -72,10 +85,27 @@ class WumpusMundo:
                     print("-", end=" ")
             print()
 
+        print(f"Score: {self.pontuacao}")
 
-jogo = WumpusMundo()
+        if self.fim_jogo:
+            print("Fim de jogo!")
+
+        print()
+
+
+
+tamanhoI = int(input("Digite o tamanho do mapa: "))
+num_buracosI = int(input("Digite a quantidade de poços: "))
+
+jogo = WumpusMundo(tamanho=tamanhoI, num_buracos=num_buracosI)
+
 jogo.mostrar()
 while not jogo.fim_jogo:
-    direcao = input("Digite uma direção (cima, baixo, esquerda, direita): ")
-    jogo.mover(direcao)
+    acao = input("Digite uma ação (cima, baixo, esquerda, direita, verificar): ")
+    if acao in ["cima", "baixo", "esquerda", "direita"]:
+        jogo.mover(acao)
+    elif acao == "verificar":
+        jogo.verificar_vizinhanca()
+    else:
+        print("Ação inválida!")
     jogo.mostrar()
