@@ -1,7 +1,7 @@
 import random
 
 class WumpusMundo:
-    def __init__(self, tamanho = 4, num_buracos = 2):
+    def __init__(self, tamanho = 3, num_buracos = 1):
         self.tamanho = tamanho
         self.num_buracos = num_buracos
         self.posicao_jogador = (0, 0)
@@ -39,11 +39,11 @@ class WumpusMundo:
         adjacentes = self._checar_adjacentes(posicao)
         for direcao, adj_pos in adjacentes.items():
             if adj_pos == self.posicao_wumpus:
-                print(f"Você sente um cheiro horrível!") # vindo do {direcao}!")
+                print(f"Você sente um cheiro horrível vindo do {direcao}!")
             if adj_pos == self.posicao_ouro:
-                print(f"Você vê um brilho radiante!") #vindo do {direcao}!")
+                print(f"Você vê um brilho radiante vindo do {direcao}!")
             if adj_pos in self.posicao_buracos:
-                print(f"Você sente uma brisa suave!") #vindo do {direcao}!")
+                print(f"Você sente uma brisa suave vindo do {direcao}!")
 
     def mover(self, direcao):
         x, y = self.posicao_jogador
@@ -94,8 +94,18 @@ class WumpusMundo:
 
 
 
-tamanhoI = int(input("Digite o tamanho do mapa: "))
-num_buracosI = int(input("Digite a quantidade de poços: "))
+tamanhoI = int(input("Digite o tamanho do mapa (3 ou mais): "))
+num_buracosI = int(input("Digite a quantidade de poços (1 ou mais): "))
+if num_buracosI > (tamanhoI * tamanhoI):
+    print("O número de poços deve ser menor que o tamanho do mapa!")
+    exit()
+if tamanhoI < 3:
+    print("O tamanho do mapa deve ser pelo menos 3!")
+    exit()
+
+if num_buracosI < 1:
+    print("O número de poços deve ser pelo menos 1!")
+    exit()
 
 jogo = WumpusMundo(tamanho=tamanhoI, num_buracos=num_buracosI)
 
