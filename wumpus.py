@@ -11,11 +11,13 @@ class WumpusMundo:
         self.fim_jogo = False
         self.pontuacao = 0
         self.flecha_disponivel = True
+        self.ouro_pegado = False
+        self.wumpus_morto = False
 
         self.posicao_wumpus = self._gerar_posicao_aleatoria()
         self.posicao_ouro = self._gerar_posicao_aleatoria()
         self.posicao_buracos = [self._gerar_posicao_aleatoria() for _ in range(num_buracos)]
-    
+
     def _gerar_posicao_aleatoria(self):
         while True:
             posicao = (random.randint(0, self.tamanho - 1), random.randint(0, self.tamanho - 1))
@@ -66,8 +68,12 @@ class WumpusMundo:
             print("Você morreu!")
             self.fim_jogo = True
         elif self.posicao_jogador == self.posicao_ouro:
-            print("Você encontrou o ouro! Parabéns!")
+            print("Você encontrou o ouro! Pegue-o e volte para a posição inicial para vencer.")
+            self.ouro_pegado = True
+            self.posicao_ouro = None
             self.pontuacao += 100
+        if self.posicao_jogador == (0, 0) and (self.ouro_pegado or self.wumpus_morto):
+            print("Você voltou para a posição inicial com o ouro ou após matar o Wumpus! Você venceu!")
             self.fim_jogo = True
 
     def _exibir_percepcoes(self, percepcoes):
@@ -126,12 +132,14 @@ class WumpusMundo:
 
             if (x, y) == self.posicao_wumpus:
                 print("Você matou o Wumpus!")
+                self.wumpus_morto = True
+                self.posicao_wumpus = None
                 self.pontuacao += 100
-                self.fim_jogo = True
-                return
+                break
 
-        print("Você errou o tiro!")
-        self.pontuacao -= 100
+        if not self.wumpus_morto:
+            print("Você errou o tiro!")
+            self.pontuacao -= 100
 
 
 class AgenteInteligente:
@@ -140,7 +148,7 @@ class AgenteInteligente:
 
     def tomar_acao(self):
         percepcoes = self.jogo._checar_vizinhanca(self.jogo.posicao_jogador)
-        
+
         if percepcoes["cheiro horrível"]:
             if self.jogo.flecha_disponivel:
                 print("Agente atirando na direção do Wumpus!")
@@ -163,8 +171,9 @@ class AgenteInteligente:
         for direcao in direcoes:
             if self._atirar_na_direcao(direcao):
                 print("Você matou o Wumpus!")
+                self.jogo.wumpus_morto = True
+                self.jogo.posicao_wumpus = None
                 self.jogo.pontuacao += 100
-                self.jogo.fim_jogo = True
                 return
         print("Você errou o tiro!")
         self.jogo.pontuacao -= 100
@@ -186,10 +195,15 @@ class AgenteInteligente:
 
     def mover_em_segurança(self):
         adjacentes = self.jogo._checar_adjacentes(self.jogo.posicao_jogador)
-        for direcao, adj_pos in adjacentes.items():
-            if adj_pos != self.jogo.posicao_wumpus and adj_pos not in self.jogo.posicao_buracos:
-                self.jogo.mover(direcao)
-                return
+        pesos = []
+        for direcao, pos in adjacentes.items():
+            if pos == self.jogo.posicao_wumpus or pos in self.jogo.posicao_buracos:
+                pesos.append(1)  # Menor peso para posições perigosas
+            else:
+                pesos.append(10)  # Maior peso para posições seguras
+
+        direcao_escolhida = random.choices(list(adjacentes.keys()), weights=pesos)[0]
+        self.jogo.mover(direcao_escolhida)
 
     def mover_para_ouro(self):
         adjacentes = self.jogo._checar_adjacentes(self.jogo.posicao_jogador)
