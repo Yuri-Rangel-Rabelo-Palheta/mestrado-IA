@@ -13,11 +13,11 @@ class WumpusMundo:
         self.flecha_disponivel = True
         self.ouro_pegado = False
         self.wumpus_morto = False
-        self.historico = set()  # Adicionando histórico de movimentos
 
         self.posicao_wumpus = self._gerar_posicao_aleatoria()
         self.posicao_ouro = self._gerar_posicao_aleatoria()
         self.posicao_buracos = [self._gerar_posicao_aleatoria() for _ in range(num_buracos)]
+        self.historico = set()  # Histórico de posições visitadas
 
     def _gerar_posicao_aleatoria(self):
         while True:
@@ -63,6 +63,7 @@ class WumpusMundo:
         else:
             print("Movimento inválido!")
             return
+        self.historico.add(self.posicao_jogador)  # Adiciona a posição ao histórico
         percepcoes = self._checar_vizinhanca(self.posicao_jogador)
         self._exibir_percepcoes(percepcoes)
         if self.posicao_jogador == self.posicao_wumpus or self.posicao_jogador in self.posicao_buracos:
@@ -77,9 +78,6 @@ class WumpusMundo:
             print("Você voltou para a posição inicial com o ouro ou após matar o Wumpus! Você venceu!")
             self.fim_jogo = True
 
-         # Adicionando a posição atual ao histórico
-        self.historico.add(self.posicao_jogador)
-        
     def _exibir_percepcoes(self, percepcoes):
         percepcao_msg = ""
         if percepcoes["cheiro horrível"]:
@@ -199,15 +197,19 @@ class AgenteInteligente:
 
     def mover_em_segurança(self):
         adjacentes = self.jogo._checar_adjacentes(self.jogo.posicao_jogador)
-        pesos = []
-        for direcao, pos in adjacentes.items():
-            if pos == self.jogo.posicao_wumpus or pos in self.jogo.posicao_buracos:
-                pesos.append(1)  # Menor peso para posições perigosas
-            else:
-                pesos.append(10)  # Maior peso para posições seguras
+        direcoes_seguras = []
 
-        direcao_escolhida = random.choices(list(adjacentes.keys()), weights=pesos)[0]
-        self.jogo.mover(direcao_escolhida)
+        for direcao, pos in adjacentes.items():
+            if pos not in self.jogo.historico and pos != self.jogo.posicao_wumpus and pos not in self.jogo.posicao_buracos:
+                direcoes_seguras.append(direcao)
+
+        if direcoes_seguras:
+            direcao_escolhida = random.choice(direcoes_seguras)
+            self.jogo.mover(direcao_escolhida)
+        else:
+            print("Não há direções seguras conhecidas, movendo aleatoriamente.")
+            direcao_escolhida = random.choice(list(adjacentes.keys()))
+            self.jogo.mover(direcao_escolhida)
 
     def mover_para_ouro(self):
         adjacentes = self.jogo._checar_adjacentes(self.jogo.posicao_jogador)
