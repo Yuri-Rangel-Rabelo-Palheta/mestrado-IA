@@ -1,0 +1,19 @@
+Tamanho do mapa: 3x3
+Posição inicial do jogador: (0, 0)
+Posição do Wumpus: (1, 2)
+Posição do ouro: (1, 1)
+Posições dos buracos: [(0, 1)]
+
+Percepções: Você vê um brilho radiante! 
+Movimento para baixo: nova posição do jogador (1, 0)
+Percepções: Você sente um cheiro horrível! Você sente uma brisa suave! 
+Movimento para direita: nova posição do jogador (1, 1)
+Jogador encontrou o ouro!
+Jogador atirou para cima e errou o tiro!
+Movimento para baixo: nova posição do jogador (2, 1)
+Movimento para esquerda: nova posição do jogador (2, 0)
+Movimento para direita: nova posição do jogador (2, 1)
+Percepções: Você sente um cheiro horrível! 
+Movimento para direita: nova posição do jogador (2, 2)
+Movimento para cima: nova posição do jogador (1, 2)
+Jogador morreu!
