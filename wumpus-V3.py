@@ -18,7 +18,23 @@ class WumpusMundo:
         self.posicao_wumpus = self._gerar_posicao_aleatoria()
         self.posicao_ouro = self._gerar_posicao_aleatoria()
         self.posicao_buracos = [self._gerar_posicao_aleatoria() for _ in range(num_buracos)]
-        
+
+        self.posicao_wumpus_inicial = self.posicao_wumpus
+        self.posicao_ouro_inicial = self.posicao_ouro
+        self.posicao_buracos_inicial = self.posicao_buracos
+
+    #reseta as posições iniciais dos objetos
+    def reset(self):
+        self.posicao_jogador = (0, 0)
+        self.posicao_wumpus = self.posicao_wumpus_inicial
+        self.posicao_ouro = self.posicao_ouro_inicial
+        self.posicao_buracos = self.posicao_buracos_inicial
+        self.fim_jogo = False
+        self.pontuacao = 0
+        self.flecha_disponivel = True
+        self.ouro_pegado = False
+        self.wumpus_morto = False
+        self.visitados = set()
     def _gerar_posicao_aleatoria(self):
         while True:
             posicao = (random.randint(0, self.tamanho - 1), random.randint(0, self.tamanho - 1))
@@ -146,6 +162,9 @@ class AlgoritmoGenetico:
         return [{'caminho': [random.choice(['cima', 'baixo', 'esquerda', 'direita']) for _ in range(20)], 'pontuacao': 0} for _ in range(self.tamanho_populacao)]
 
     def avaliar(self, individuo):
+        #reseta as variáveis
+        self.mundo.reset()
+
         agente = Agente(self.mundo)
         ouro_pegado = False
         for movimento in individuo['caminho']:
@@ -213,3 +232,7 @@ for movimento in ag.melhor_caminho:
     print(f"Movendo para: {movimento}")
     jogo.mover(movimento)
     jogo.mostrar()
+
+# Mostrando a percepção do mundo ao final do jogo
+print("Percepção do mundo ao final do jogo:")
+jogo.mostrar()
