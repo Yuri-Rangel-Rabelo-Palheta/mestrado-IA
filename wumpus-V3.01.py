@@ -1,4 +1,5 @@
 import random
+import numpy as np
 
 class WumpusMundo:
     def __init__(self, tamanho=4, num_buracos=2):
@@ -112,7 +113,6 @@ class WumpusMundo:
             percepcao_msg += "Você sente uma brisa suave! "
         #if percepcao_msg:
             #print(percepcao_msg)
-            
 
     def verificar_vizinhanca(self):
         percepcoes = self._checar_vizinhanca(self.posicao_jogador)
@@ -140,8 +140,6 @@ class WumpusMundo:
 
         print()
 
-
-
 class Agente:
     def __init__(self, mundo):
         self.mundo = mundo
@@ -152,7 +150,7 @@ class Agente:
     def mover(self, direcao):
         self.mundo.mover(direcao)
         self.score = self.mundo.pontuacao
- 
+
         if self.mundo.fim_jogo:
             return True  # Indica fim de jogo
         return False
@@ -168,7 +166,12 @@ class AlgoritmoGenetico:
         self.melhor_individuo = None
 
     def inicializar_populacao(self):
-        return [{'caminho': [random.choice(['cima', 'baixo', 'esquerda', 'direita']) for _ in range(40)], 'pontuacao': 0} for _ in range(self.tamanho_populacao)]
+        populacao = []
+        for _ in range(self.tamanho_populacao):
+            tamanho_caminho = int(np.clip(np.random.normal(11, 4), 2, 20))  # Média 11, desvio padrão 4, limites entre 2 e 20
+            caminho = [random.choice(['cima', 'baixo', 'esquerda', 'direita']) for _ in range(tamanho_caminho)]
+            populacao.append({'caminho': caminho, 'pontuacao': 0})
+        return populacao
 
     def avaliar(self, individuo):
         self.mundo.reset()
@@ -190,14 +193,13 @@ class AlgoritmoGenetico:
             else:
                 caminho_de_volta.append(movimento)
 
-        if agente.mundo.fim_jogo:
-            individuo['pontuacao'] = -1000
+        if ouro_pegado:
+            distancia_ate_ouro = len(caminho_ate_ouro)
+            distancia_de_volta = len(caminho_de_volta)
+            pontuacao_retorno = 1000 if agente.mundo.posicao_jogador == (0, 0) else -1000
+            individuo['pontuacao'] = agente.score + (1000 - distancia_ate_ouro - distancia_de_volta) + pontuacao_retorno
         else:
-            individuo['pontuacao'] = agente.score
-            if ouro_pegado and agente.mundo.posicao_jogador == (0, 0):
-                individuo['pontuacao'] += 1000
-            elif ouro_pegado:
-                individuo['pontuacao'] -= 500
+            individuo['pontuacao'] = agente.score - 1000
 
     def selecionar(self):
         min_pontuacao = min(individuo['pontuacao'] for individuo in self.populacao)
@@ -208,7 +210,10 @@ class AlgoritmoGenetico:
         if random.random() > self.taxa_crossover:
             return pai1, pai2
 
-        ponto_corte = random.randint(1, len(pai1['caminho']) - 2)
+        if len(pai1['caminho']) < 2 or len(pai2['caminho']) < 2:
+            return pai1, pai2  # Retorna os pais inalterados se qualquer um dos caminhos for muito curto
+
+        ponto_corte = random.randint(1, min(len(pai1['caminho']), len(pai2['caminho'])) - 1)
         filho1 = {'caminho': pai1['caminho'][:ponto_corte] + pai2['caminho'][ponto_corte:], 'pontuacao': 0}
         filho2 = {'caminho': pai2['caminho'][:ponto_corte] + pai1['caminho'][ponto_corte:], 'pontuacao': 0}
         return filho1, filho2
@@ -223,6 +228,11 @@ class AlgoritmoGenetico:
             for individuo in self.populacao:
                 self.avaliar(individuo)
 
+            melhor_individuo = max(self.populacao, key=lambda x: x['pontuacao'])
+            self.melhor_individuo = melhor_individuo
+            print(f"Geração {geracao}: Melhor Pontuação: {melhor_individuo['pontuacao']}")
+            print(f"Caminho: {melhor_individuo['caminho']}")
+
             self.populacao = self.selecionar()
             nova_populacao = []
             while len(nova_populacao) < self.tamanho_populacao:
@@ -233,13 +243,11 @@ class AlgoritmoGenetico:
                 nova_populacao.extend([filho1, filho2])
             self.populacao = nova_populacao
 
-            melhor_individuo = max(self.populacao, key=lambda x: x['pontuacao'])
-            self.melhor_individuo = melhor_individuo
-            print(f"Geração {geracao}: Melhor Pontuação: {melhor_individuo['pontuacao']}")
+            
 
 # Configuração do jogo
-tamanho = 4
-num_buracos = 2
+tamanho = 5
+num_buracos = 3
 
 jogo = WumpusMundo(tamanho=tamanho, num_buracos=num_buracos)
 
@@ -250,9 +258,9 @@ taxa_mutacao = float(input("Taxa de Mutação: "))
 taxa_crossover = float(input("Taxa de Crossover: "))
 geracoes = int(input("Gerações: "))"""
 
-ag = AlgoritmoGenetico(tamanho_populacao=100, taxa_mutacao=0.25, taxa_crossover=0.5, geracoes=500, mundo=jogo)
-
 #ag = AlgoritmoGenetico(tamanho_populacao=tamanho_populacao, taxa_mutacao=taxa_mutacao, taxa_crossover=taxa_crossover, geracoes=geracoes, mundo=jogo)
+
+ag = AlgoritmoGenetico(tamanho_populacao=100, taxa_mutacao=0.25, taxa_crossover=0.5, geracoes=500, mundo=jogo)
 
 ag.run()
 
@@ -265,6 +273,7 @@ ag.mundo.reset()
 
 # Simulando os movimentos do melhor caminho encontrado
 print("Simulação dos movimentos do melhor caminho encontrado:")
+jogo.mostrar()
 for movimento in ag.melhor_individuo['caminho']:
     if jogo.fim_jogo:
         break
@@ -272,4 +281,6 @@ for movimento in ag.melhor_individuo['caminho']:
     jogo.mover(movimento)
     jogo.mostrar()
 
+# Mostrando a percepção do mundo ao final do jogo
+print("Percepção do mundo ao final do jogo:")
 jogo.mostrar()
