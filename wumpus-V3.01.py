@@ -276,7 +276,6 @@ class AlgoritmoGenetico:
 ###########################################            
 
 
-
     def encontrar_melhor_individuo(self):
         return max(self.populacao, key=lambda individuo: individuo['pontuacao'])
 
@@ -299,10 +298,11 @@ class AlgoritmoGenetico:
                 nova_populacao.extend([filho1, filho2])
 
             
-
             self.populacao = nova_populacao
             melhor_individuo = self.encontrar_melhor_individuo()
             melhor_fitness_por_geracao.append(melhor_individuo['pontuacao'])
+            
+            print(f"Geração {geracao + 1}: Melhor pontuação = {melhor_individuo['pontuacao']}")
 
             esquema = []
             for caminho in melhor_individuo['caminho']:
@@ -332,7 +332,8 @@ class AlgoritmoGenetico:
 
             print(f"Caminho: {esquema2}")
 
-            print(f"Geração {geracao + 1}: Melhor pontuação = {melhor_individuo['pontuacao']}")
+            
+            
 
         self.melhor_individuo = self.encontrar_melhor_individuo()
         return melhor_fitness_por_geracao
