@@ -23,6 +23,12 @@ class WumpusMundo:
         self.posicao_ouro_inicial = self.posicao_ouro
         self.posicao_buracos_inicial = self.posicao_buracos
 
+        #flag para saber se é o AG ou o jogo normal
+        self.jogo_normal = True
+
+    def jogo_AG(self):
+        self.jogo_normal = False  
+
     def reset(self):
         self.posicao_jogador = (0, 0)
         self.posicao_wumpus = self.posicao_wumpus_inicial
@@ -92,7 +98,11 @@ class WumpusMundo:
         if self.posicao_jogador == self.posicao_wumpus or self.posicao_jogador in self.posicao_buracos:
             #print("Você morreu!")
             self.pontuacao -= 1000
-            self.fim_jogo = True
+            #self.fim_jogo = True
+            if self.jogo_normal:
+                self.fim_jogo = True
+            else:
+                self.fim_jogo = False
         elif self.posicao_jogador == self.posicao_ouro:
             #print("Você encontrou o ouro! Pegue-o e volte para a posição inicial para vencer.")
             self.ouro_pegado = True
@@ -100,7 +110,11 @@ class WumpusMundo:
             self.pontuacao += 1000
         if self.posicao_jogador == (0, 0) and self.ouro_pegado:
             #print("Você voltou para a posição inicial com o ouro! Você venceu!")
-            self.fim_jogo = True
+            #self.fim_jogo = True
+            if self.jogo_normal:
+                self.fim_jogo = True
+            else:
+                self.fim_jogo = False
 
     def _exibir_percepcoes(self, percepcoes):
         percepcao_msg = ""
@@ -173,6 +187,8 @@ class AlgoritmoGenetico:
     def avaliar(self, individuo):
         self.mundo.reset()
 
+        self.mundo.jogo_AG()
+
         agente = Agente(self.mundo)
         ouro_pegado = False
         caminho_ate_ouro = []
@@ -238,8 +254,8 @@ class AlgoritmoGenetico:
             print(f"Geração {geracao}: Melhor Pontuação: {melhor_individuo['pontuacao']}")
 
 # Configuração do jogo
-tamanho = 4
-num_buracos = 2
+tamanho = 10
+num_buracos = 5
 
 jogo = WumpusMundo(tamanho=tamanho, num_buracos=num_buracos)
 
@@ -250,7 +266,7 @@ taxa_mutacao = float(input("Taxa de Mutação: "))
 taxa_crossover = float(input("Taxa de Crossover: "))
 geracoes = int(input("Gerações: "))"""
 
-ag = AlgoritmoGenetico(tamanho_populacao=100, taxa_mutacao=0.25, taxa_crossover=0.5, geracoes=500, mundo=jogo)
+ag = AlgoritmoGenetico(tamanho_populacao=50, taxa_mutacao=0.25, taxa_crossover=0.5, geracoes=1000, mundo=jogo)
 
 #ag = AlgoritmoGenetico(tamanho_populacao=tamanho_populacao, taxa_mutacao=taxa_mutacao, taxa_crossover=taxa_crossover, geracoes=geracoes, mundo=jogo)
 
