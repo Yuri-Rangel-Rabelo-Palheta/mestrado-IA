@@ -1,10 +1,13 @@
-import math
 import random
+import datetime
 import matplotlib.pyplot as plt
+
+import math
+
 from heapq import heappop, heappush
 
 class WumpusMundo:
-    def __init__(self, tamanho=5, num_buracos=1):
+    def __init__(self, tamanho=10, num_buracos=9):
         self.tamanho = tamanho
         self.num_buracos = num_buracos
         self.posicao_jogador = (0, 0)
@@ -17,6 +20,7 @@ class WumpusMundo:
         self.ouro_pegado = False
         self.wumpus_morto = False
         self.historico = {self.posicao_jogador}
+        self.jogo_vencido = False
 
         # Inicialização das posições
         self.posicao_wumpus = self._gerar_posicao_aleatoria()
@@ -93,6 +97,7 @@ class WumpusMundo:
             print("Você voltou para a posição inicial com o ouro! Você venceu!")
             self.pontuacao += 1000
             self.fim_jogo = True
+            self.jogo_vencido = True
 
     def _exibir_percepcoes(self, percepcoes):
         percepcao_msg = ""
@@ -198,178 +203,108 @@ class AgenteInteligente:
         self.casa_segura = set()
         self.casa_segura_nao_visitada = set()
         self.casa_suspeita = set()
-        self.casa_buraco = set()
-        self.casa_wumpus = set()
+        self.casa_perigo = False
         self.casa_anterior = (0, 0)
-        self.voltou = False
+        self.matar = 0
+        self.casa_suspeita_peso_1 = set()
+        self.casa_suspeita_peso_2 = set()
+        self.casa_suspeita_peso_3 = set()
+        self.casa_suspeita_peso_4 = set()
 
         self.casa_segura.add(self.posicao)
         self.adicionar_casa_suspeita()
     def tomar_acao(self):
-        
-
         self.mundo.mostrar()
-        print("mundo antes de tomar acao: ")
-
-        mundo = self.mundo
-
-        while mundo.fim_jogo == False: 
-            print("casas seguras: ", self.casa_segura)
-            print("casa segura nao visitada: ", self.casa_segura_nao_visitada)
-            print("casa suspeita: ", self.casa_suspeita)
-            if not self.ouro_pegado:
-                #Procura o ouro
-                #encontra uma direcao segura
-                
+        while not self.mundo.fim_jogo:
+            if self.matar > 2:
+                #agente vai tentar matar o wumpus
+                pass
+            if not self.mundo.ouro_pegado:
                 direcao = self.direcao_segura()
-                #print ("conteudo de direcao: ",direcao)
+                if not direcao:  # Se não há direção segura, pode indicar um loop
+                    print("Nenhuma direção segura encontrada. Verifique as listas de casas seguras e suspeitas.")
+                    break
                 for dir in direcao:
-                    #print ("direcao movida: ",dir)
                     self.mover(dir)
-                    #print("localizacao do agente: ", self.mundo.posicao_jogador)
-                    #print("localizacao do agente usado pelo ag: ", self.posicao)
-                    self.adicionar_casa_segura_nao_visitada(self.posicao)
+                    #self.adicionar_casa_segura_nao_visitada(self.posicao)
                     self.adicionar_casa_segura(self.posicao)
                     self.mundo.mostrar()
-                self.adicionar_casa_segura(self.posicao)  
-                
-
             else:
-                #encontra uma direcao segura para a 0,0
                 direcao = self.encontra_direcao(self.posicao, (0, 0))
+                print("Ouro encontrado. Agente retornando ao ponto inicial.")
                 for dir in direcao:
-                    dir_traduzida = self.direcao_traduzida(dir)
-                    self.mover(dir_traduzida)
-                    self.adicionar_casa_segura_nao_visitada(self.posicao)
+                    print("Proxima Casa:", dir)
+                    print("Posição:", self.posicao)
+                    print("Direção Traduzida:", self.traduz_direcao(dir))
+                    self.mover(self.traduz_direcao(dir))
+                    #self.adicionar_casa_segura_nao_visitada(self.posicao)
                     self.mundo.mostrar()
-                    
-            #self.mundo.mostrar()
-            #print("casas seguras não visitadas tomar_acao1: ", self.casa_segura_nao_visitada)
-            
             self.casa_segura_nao_visitada = self.casa_segura_nao_visitada.difference(self.casa_segura)
             self.casa_segura_nao_visitada.discard(self.posicao)
-            #print("casas seguras não visitadas tomar_acao2: ", self.casa_segura_nao_visitada)
-            
         
     def mover(self, direcao):
         self.mundo.mover(direcao)
         self.posicao = self.mundo.posicao_jogador
     def atirar(self, direcao):
-        pass
+        self.mundo.atirar(direcao)
+    def cacar_wumpus(self):
+        direcoes = ["cima", "baixo", "esquerda", "direita"]
+        #busca a casa com maior peso para atirar
+        adj = self.adjacentes(self.posicao[0], self.posicao[1])
+
+        for casa in adj:
+            #procura adj no conjunto de casas suspeitas_peso_4:
+            if casa in self.casa_suspeita_peso_4:
+                return self.traduz_direcao(casa)
+            #procura adj no conjunto de casas suspeitas_peso_3:
+            if casa in self.casa_suspeita_peso_3:
+                return self.traduz_direcao(casa)
+            #procura adj no conjunto de casas suspeitas_peso_2:
+            if casa in self.casa_suspeita_peso_2:
+                return self.traduz_direcao(casa)
+            #procura adj no conjunto de casas suspeitas_peso_1:
+            if casa in self.casa_suspeita_peso_1:
+                return self.traduz_direcao(casa)
+        
+        #retorna a direcao da casa
+        return random.choice(direcoes)
+
     def direcao_segura(self):
         direcoes = ["cima", "baixo", "esquerda", "direita"]
-
         percepcoes = self.mundo.verificar_vizinhanca()
-        
-        #print ("Percepcoes: ",percepcoes)
-        
+        self.casa_perigo = False
         if percepcoes == {"cheiro horrivel": False, "brisa suave": False, "brilho radiante": False}:
-            #print("Posição do jogador: ",self.posicao)
-            #adiciona casa adjacentes às casas seguras não visitadas
             self.adicionar_casa_segura_nao_visitada(self.posicao)
-            #escolhe aleatoriamente uma direção
-            #caminho = []
-            #caminho.append(random.choice(direcoes))
-            #return caminho
-
-            #encontra a casa_segura_nao_visitada mais proxima
             casa_mais_proxima = self.encontra_casa_segura_nao_visitada_mais_proxima()
-            #deve adicionar a casa encontrada a lista de casas visitadas
-            #self.adicionar_casa_segura(casa_mais_proxima)
-            if casa_mais_proxima == None:
-                #encontra a casa suspeita mais proxima
+            if casa_mais_proxima is None:
                 casa_mais_proxima = self.encontra_casa_suspeita_mais_proxima()
-            
-            print("casa mais proxima (caminho livre): ", casa_mais_proxima)
-
             caminho = self.encontra_direcao(self.posicao, casa_mais_proxima)
-            print("caminho retornado: ",caminho)
-            caminho_traduzido = []
-            for cam in caminho:
-                direc = self.traduz_direcao(cam)
-                if direc != None:
-                    caminho_traduzido.append(direc)
-            #envia o caminho encontrado
-            return caminho_traduzido
-        
+            return [self.traduz_direcao(cam) for cam in caminho if self.traduz_direcao(cam) is not None]
 
-        if percepcoes == {"cheiro horrivel": False, "brisa suave": True, "brilho radiante": False}:
-            #Adiciona casas adjacentes na lista de casas suspeitas
-            #print("Posição do jogador: ",self.posicao)
-            #self.adicionar_casa_suspeita(self.posicao)
-
-            #encontra a casa_segura_nao_visitada mais proxima
+        if percepcoes["brisa suave"]:
+            self.casa_perigo = True
             casa_mais_proxima = self.encontra_casa_segura_nao_visitada_mais_proxima()
-            #deve adicionar a casa encontrada a lista de casas visitadas
-            #self.adicionar_casa_segura(casa_mais_proxima)
-            if casa_mais_proxima == None:
-                #encontra a casa suspeita mais proxima
+            if casa_mais_proxima is None:
                 casa_mais_proxima = self.encontra_casa_suspeita_mais_proxima()
-            
-            print("casa mais proxima (if do buraco): ", casa_mais_proxima)
-
             caminho = self.encontra_direcao(self.posicao, casa_mais_proxima)
-            print("caminho retornado: ",caminho)
-            caminho_traduzido = []
-            for cam in caminho:
-                direc = self.traduz_direcao(cam)
-                if direc != None:
-                    caminho_traduzido.append(direc)
-            #envia o caminho encontrado
-            return caminho_traduzido
-            
+            return [self.traduz_direcao(cam) for cam in caminho if self.traduz_direcao(cam) is not None]
         
-        if percepcoes == {"cheiro horrivel": True, "brisa suave": False, "brilho radiante": False}:
-            #Adiciona casas adjacentes na lista de casas suspeitas
-
-            #self.adicionar_casa_suspeita(self.posicao)
-
-            #encontra a casa_segura_nao_visitada mais proxima
+        if percepcoes["cheiro horrivel"]:
+            self.matar += 1
+            if((self.matar > 1) and (self.mundo.flecha_disponivel == True)):
+                print("Caçando o wumpus")
+                self.atirar(self.cacar_wumpus())
+            if(self.posicao == (0,0) and (self.mundo.flecha_disponivel == True)):
+                print("Caçando o wumpus")
+                self.atirar(self.cacar_wumpus())
             casa_mais_proxima = self.encontra_casa_segura_nao_visitada_mais_proxima()
-
-            if casa_mais_proxima == None:
-                #encontra a casa suspeita mais proxima
+            if casa_mais_proxima is None:
                 casa_mais_proxima = self.encontra_casa_suspeita_mais_proxima()
-            print("casa mais proxima (if do wumpus): ", casa_mais_proxima)
-
-
             caminho = self.encontra_direcao(self.posicao, casa_mais_proxima)
-            print("caminho retornado: ",caminho)
-            caminho_traduzido = []
-            for cam in caminho:
-                direc = self.traduz_direcao(cam)
-                if direc != None:
-                    caminho_traduzido.append(direc)
-            #envia o caminho encontrado
-            return caminho_traduzido
+            return [self.traduz_direcao(cam) for cam in caminho if self.traduz_direcao(cam) is not None]
         
-        
-        if percepcoes == {"cheiro horrivel": True, "brisa suave": True, "brilho radiante": False}:
-            #Adiciona casas adjacentes na lista de casas suspeitas
-
-            #self.adicionar_casa_suspeita(self.posicao)
-
-            #encontra a casa_segura_nao_visitada mais proxima
-            casa_mais_proxima = self.encontra_casa_segura_nao_visitada_mais_proxima()
-
-            if casa_mais_proxima == None:
-                #encontra a casa suspeita mais proxima
-                casa_mais_proxima = self.encontra_casa_suspeita_mais_proxima()
-                
-            print("casa mais proxima (if do buraco e do wumpus): ", casa_mais_proxima)
-            caminho = self.encontra_direcao(self.posicao, casa_mais_proxima)
-            print("Caminho encontrado: ",caminho)
-            caminho_traduzido = []
-            for cam in caminho:
-                print("cam: ", cam)
-                direc = self.traduz_direcao(cam)
-
-                if direc != None:
-                    caminho_traduzido.append(direc)
-            #envia o caminho encontrado
-            print("Retornando o caminho traduzido: ",caminho_traduzido)
-            return caminho_traduzido
-        print("ERRO ao retornar a direção")       
+        return []
+     
     def adjacentes(self, X, Y):
         adjacentes = []
         tamanhoMundo = self.tamanho
@@ -384,36 +319,30 @@ class AgenteInteligente:
             adjacentes.append((X, Y + 1))
 
         return adjacentes        
-    def adicionar_casa_segura_nao_visitada(self,posic):
-        #print("adicionar_casa_segura_nao_visitada :" , posic)
+    def adicionar_casa_segura_nao_visitada(self, posic):
         self.casa_segura.add(posic)
-        self.casa_segura_nao_visitada = self.casa_segura_nao_visitada.difference(self.casa_segura)
-        self.casa_segura_nao_visitada.discard(self.posicao)
-        #print("casa_segura : ", self.casa_segura)
-        #print("casa_segura_nao_visitada : ", self.casa_segura_nao_visitada)
-        adjacentes = self.adjacentes(posic[0],posic[1])
+        self.casa_segura_nao_visitada.discard(posic)
+        adjacentes = self.adjacentes(posic[0], posic[1])
         casas_para_retirar = []
+        
         for adj_pos in adjacentes:
-            #print("adj_pos : ", adj_pos)
-            for casa in self.casa_segura:
-                #print("casa : ", casa)
-                if adj_pos != casa:
-                    self.casa_segura_nao_visitada.add(adj_pos)
-                    #print("adicionada casa_segura_nao_visitada : ", adj_pos)
-                else:
-                    self.casa_segura_nao_visitada.discard(adj_pos)
-                for casa_suspeita in self.casa_suspeita:
-                    #print("casa_suspeita : ", casa_suspeita)
-                    if adj_pos == casa_suspeita:
-                        casas_para_retirar.append(adj_pos)
-                        #self.retirar_casa_suspeita(adj_pos)
-        #print("casas_para_retirar : ", casas_para_retirar)
-        casas_para_retirar = list(set(casas_para_retirar))
-        for casa in casas_para_retirar:
-            #print("casa retirada das casas suspeitas : ", casa)
+            if adj_pos not in self.casa_segura:
+                self.casa_segura_nao_visitada.add(adj_pos)
+            else:
+                print ("Casa suspeita retirada: ", adj_pos)
+                self.casa_segura_nao_visitada.discard(adj_pos)
+            
+            # Verifica se a casa adjacente está na lista de casas suspeitas
+            if adj_pos in self.casa_suspeita:
+                casas_para_retirar.append(adj_pos)
+        
+        for casa in casas_para_retirar:    
             self.retirar_casa_suspeita(casa)
-        self.casa_segura.add(posic)  
-        self.casa_segura_nao_visitada.discard(self.posicao) 
+            print("Casa retirada das casas suspeitas: ", casa)
+        
+        self.casa_segura_nao_visitada.discard(self.posicao)
+
+
             
     def adicionar_casa_segura(self, posicao):
         
@@ -471,14 +400,85 @@ class AgenteInteligente:
     def encontra_casa_suspeita_mais_proxima(self):
         posicao = self.posicao
         casa_mais_proxima = None
-        distancia = 10000
-        for casa in self.casa_suspeita:
-            aux = self.heuristica(casa, posicao)
-            if(aux < distancia):
-                distancia = aux
-                casa_mais_proxima = casa
+        distancia = float('inf')
+        self.casa_segura.add(posicao)
+        self.casa_suspeita.discard(posicao)
 
-        return casa_mais_proxima
+        print("posicoes_potencialmente_perigosas (encontra_casa_suspeita): ", self.casa_suspeita)
+        
+        casas_nao_pesadas = self.casa_suspeita - self.casa_suspeita_peso_1 - self.casa_suspeita_peso_2 - self.casa_suspeita_peso_3 - self.casa_suspeita_peso_4
+
+        for casa in self.casa_suspeita_peso_4:
+            casas_nao_pesadas.discard(casa)
+
+        for casa in self.casa_suspeita_peso_3:
+            casas_nao_pesadas.discard(casa)
+        
+        for casa in self.casa_suspeita_peso_2:
+            casas_nao_pesadas.discard(casa)
+
+        for casa in self.casa_suspeita_peso_1:
+            casas_nao_pesadas.discard(casa)
+        
+        print("casas_nao_pesadas (encontra_casa_suspeita): ", casas_nao_pesadas)
+        # Se houver casas suspeitas fora dos conjuntos de peso, seleciona a mais próxima
+        if casas_nao_pesadas:
+            for casa in casas_nao_pesadas:
+                aux = self.heuristica(casa, posicao)
+                if aux < distancia:
+                    distancia = aux
+                    casa_mais_proxima = casa
+        else:
+            # Se não houver casas fora dos conjuntos de peso, busca a mais próxima nos conjuntos de peso, começando pelo peso 1
+            for casa in self.casa_suspeita_peso_1:
+                aux = self.heuristica(casa, posicao)
+                if aux < distancia:
+                    distancia = aux
+                    casa_mais_proxima = casa
+            
+            if casa_mais_proxima is None:
+                for casa in self.casa_suspeita_peso_2:
+                    aux = self.heuristica(casa, posicao)
+                    if aux < distancia:
+                        distancia = aux
+                        casa_mais_proxima = casa
+
+            if casa_mais_proxima is None:
+                for casa in self.casa_suspeita_peso_3:
+                    aux = self.heuristica(casa, posicao)
+                    if aux < distancia:
+                        distancia = aux
+                        casa_mais_proxima = casa
+
+            if casa_mais_proxima is None:
+                for casa in self.casa_suspeita_peso_4:
+                    aux = self.heuristica(casa, posicao)
+                    if aux < distancia:
+                        distancia = aux
+                        casa_mais_proxima = casa
+
+        return casa_mais_proxima  # Retorna None se não encontrar a casa
+
+    
+    def adiciona_peso_casa_suspeita(self, posicao):
+        if posicao in self.casa_suspeita_peso_1:
+            self.casa_suspeita_peso_1.remove(posicao)
+            self.casa_suspeita_peso_2.add(posicao)
+        elif posicao in self.casa_suspeita_peso_2:
+            self.casa_suspeita_peso_2.remove(posicao)
+            self.casa_suspeita_peso_3.add(posicao)
+        elif posicao in self.casa_suspeita_peso_3:
+            self.casa_suspeita_peso_3.remove(posicao)
+            self.casa_suspeita_peso_4.add(posicao)
+        elif posicao in self.casa_suspeita_peso_4:
+            # A casa já está no maior peso, não faz nada
+            pass
+        else:
+            # Se a casa não está em nenhum conjunto, adiciona no conjunto de peso 1
+            self.casa_suspeita_peso_1.add(posicao)
+
+
+    
     def traduz_direcao(self, posicao_objetivo):
         #print("posicao_objetivo : ", posicao_objetivo)
         linha_objetivo, coluna_objetivo = posicao_objetivo
@@ -490,13 +490,13 @@ class AgenteInteligente:
         Linha_posicao = int(Linha_posicao)
         Coluna_posicao = int(Coluna_posicao)
 
-        if linha_objetivo > Linha_posicao:
+        if ((linha_objetivo > Linha_posicao) and (coluna_objetivo == Coluna_posicao)):
             return 'baixo'
-        if linha_objetivo < Linha_posicao:
+        if ((linha_objetivo < Linha_posicao) and (coluna_objetivo == Coluna_posicao)):
             return 'cima'
-        if coluna_objetivo > Coluna_posicao:
+        if ((coluna_objetivo > Coluna_posicao) and (linha_objetivo == Linha_posicao)):
             return 'direita'
-        if coluna_objetivo < Coluna_posicao:
+        if ((coluna_objetivo < Coluna_posicao) and (linha_objetivo == Linha_posicao)):
             return 'esquerda'
 
     def heuristica(self,a, b):
@@ -520,7 +520,7 @@ class AgenteInteligente:
         #print("casa_segura_nao_visitada (encontra_direcao): ", self.casa_segura_nao_visitada)
 
         matriz = self.gerar_matriz(self.tamanho, 0)
-        print("matriz : ", matriz)
+        #print("matriz : ", matriz)
         linhas, colunas = len(matriz), len(matriz[0])
 
         #conjunto_permitido = []
@@ -529,10 +529,10 @@ class AgenteInteligente:
         conjunto_permitido =  set()
         conjunto_permitido = self.casa_segura
 
-        print("conjunto_permitido : ", conjunto_permitido)
+        #print("conjunto_permitido : ", conjunto_permitido)
         
-        print("posicao atual : ", posicao_atual)
-        print("posicao objetivo : ", posicao_objetivo)
+        #print("posicao atual : ", posicao_atual)
+        #print("posicao objetivo : ", posicao_objetivo)
 
         conjunto_aberto = []
         heappush(conjunto_aberto, (0 + self.heuristica(posicao_atual, posicao_objetivo), 0, posicao_atual))
@@ -580,14 +580,98 @@ class AgenteInteligente:
 
     def gerar_matriz(self, tamanho, valor_inicial=0):
         return [[valor_inicial for _ in range(tamanho)] for _ in range(tamanho)]
-       
+ 
 
-# Exemplo de execução
-jogo = WumpusMundo()
-agente = AgenteInteligente(jogo)
+# Função para salvar o registro da partida
+def salvar_registro(jogo, caminho_arquivo="registro"):
+    data_atual = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    caminho_arquivo = f"{caminho_arquivo}_{data_atual}.txt"
+    
+    with open(caminho_arquivo, "w") as file:
+        file.write(f"Tamanho do mapa: {jogo.tamanho}\n")
+        file.write(f"Posicao do Wumpus: {jogo.posicao_wumpus}\n")
+        file.write(f"Posicao do Ouro: {jogo.posicao_ouro}\n")
+        file.write(f"Posicoes dos Buracos: {jogo.posicao_buracos}\n")
+        file.write(f"Movimentos do Jogador:\n")
+        for movimento in jogo.historico:
+            file.write(f"{movimento}\n")
 
-jogo.mostrar()
+    print(f"Registro salvo em {caminho_arquivo}")
 
-while not jogo.fim_jogo:
-    agente.tomar_acao()
-    agente.mundo.mostrar()
+# Função para executar o jogo automaticamente 20 vezes
+def executar_vezes(tamanho, num_buracos, vezes=20):
+    resultados = []
+
+    jogo_inicial = WumpusMundo(tamanho=tamanho, num_buracos=num_buracos)
+    agente = AgenteInteligente(jogo_inicial)
+
+    for i in range(vezes):
+        jogo = WumpusMundo(tamanho=tamanho, num_buracos=num_buracos)
+        jogo.posicao_wumpus = jogo_inicial.posicao_wumpus
+        jogo.posicao_ouro = jogo_inicial.posicao_ouro
+        jogo.posicao_buracos = jogo_inicial.posicao_buracos.copy()
+        agente = AgenteInteligente(jogo)
+
+        while not jogo.fim_jogo:
+            agente.tomar_acao()
+
+            
+        
+        resultados.append((jogo.pontuacao))
+        #salvar_registro(jogo)
+        jogo.resetar()
+        #jogo_inicial = WumpusMundo(tamanho=tamanho, num_buracos=num_buracos)
+
+    return resultados
+
+# Função para plotar os gráficos
+def plotar_graficos(resultados):
+    plt.figure(figsize=(18, 6))
+
+    # Histograma
+    plt.subplot(1, 3, 1)
+    plt.hist(resultados, bins=10, edgecolor='black')
+    plt.title('Distribuição das Pontuações')
+    plt.xlabel('Pontuação')
+    plt.ylabel('Frequência')
+
+    # Gráfico de linhas
+    plt.subplot(1, 3, 2)
+    plt.plot(resultados, marker='o')
+    plt.title('Desempenho ao Longo das Execuções')
+    plt.xlabel('Execução')
+    plt.ylabel('Pontuação')
+
+    # Gráfico de barras (acurácia)
+    plt.subplot(1, 3, 3)
+    vitorias = sum(1 for resultado in resultados if resultado >= -1000)
+    derrotas = len(resultados) - vitorias
+    plt.bar(['Vitórias', 'Derrotas'], [vitorias, derrotas], color=['green', 'red'])
+    plt.title('Acurácia do Agente')
+    plt.xlabel('Resultado')
+    plt.ylabel('Quantidade')
+
+    plt.tight_layout()
+    plt.show()
+
+# Entrada do usuário
+tamanhoI = int(input("Digite o tamanho do mapa (3 ou mais): "))
+num_buracosI = int(input("Digite a quantidade de poços (1 ou mais): "))
+if num_buracosI > (tamanhoI * tamanhoI):
+    print("O número de poços deve ser menor que o tamanho do mapa!")
+    exit()
+if tamanhoI < 3:
+    print("O tamanho do mapa deve ser pelo menos 3!")
+    exit()
+if num_buracosI < 1:
+    print("O número de poços deve ser pelo menos 1!")
+    exit()
+
+# Executar o jogo 20 vezes e imprimir resultados
+resultados = executar_vezes(tamanhoI, num_buracosI)
+print("Resultados das 20 execuções:", resultados)
+print("Pontuação média:", sum(resultados) / len(resultados))
+
+# Plotar os gráficos
+plotar_graficos(resultados)
+

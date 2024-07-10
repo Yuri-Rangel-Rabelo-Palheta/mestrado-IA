@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class WumpusMundo:
-    def __init__(self, tamanho=4, num_buracos=2):
+    def __init__(self, tamanho=10, num_buracos=2):
         self.tamanho = tamanho
         self.num_buracos = num_buracos
         self.posicao_jogador = (0, 0)
@@ -178,7 +178,7 @@ class AlgoritmoGenetico:
             tamanho_mundo = self.mundo.tamanho
             media = (tamanho_mundo + 10) / 2
             desvio_padrao = abs((tamanho_mundo - 5) / 2)  # Garantir que o desvio padrão seja positivo
-            tamanho_caminho = int(np.clip(np.random.normal(media, desvio_padrao), 2, pow(tamanho_mundo, 2)))
+            tamanho_caminho = 200#int(np.clip(np.random.normal(media, desvio_padrao), 2, pow(tamanho_mundo, 2)))
             caminho = [random.choice(['cima', 'baixo', 'esquerda', 'direita']) for _ in range(tamanho_caminho)]
             populacao.append({'caminho': caminho, 'pontuacao': 1})  # Inicialização da pontuação para evitar zero
 
@@ -258,7 +258,7 @@ class AlgoritmoGenetico:
 
 # Inicialização do ambiente Wumpus e execução do Algoritmo Genético
 mundo = WumpusMundo(tamanho=10, num_buracos=5)
-ag = AlgoritmoGenetico(tamanho_populacao=50, taxa_mutacao=0.05, taxa_crossover=0.85, geracoes=1000, mundo=mundo)
+ag = AlgoritmoGenetico(tamanho_populacao=50, taxa_mutacao=0.05, taxa_crossover=0.85, geracoes=100, mundo=mundo)
 
 # Execução do Algoritmo Genético e plotagem dos resultados
 melhor_fitness_por_geracao = ag.executar()

@@ -1,6 +1,7 @@
 import random
+
 from matplotlib import pyplot as plt
-#import numpy as np
+import numpy as np
 
 class WumpusMundo:
     def __init__(self, tamanho=4, num_buracos=2):
@@ -25,7 +26,7 @@ class WumpusMundo:
         self.posicao_ouro_inicial = self.posicao_ouro
         self.posicao_buracos_inicial = self.posicao_buracos
 
-        # Flag para saber se é o AG ou o jogo normal
+        #flag para saber se é o AG ou o jogo normal
         self.jogo_normal = True
 
     def reset(self):
@@ -102,16 +103,20 @@ class WumpusMundo:
         if self.posicao_jogador == self.posicao_wumpus or self.posicao_jogador in self.posicao_buracos:
             #print("Você morreu!")
             self.pontuacao -= 1000
+            #self.fim_jogo = True
             if self.jogo_normal:
                 self.fim_jogo = True
             else:
                 self.fim_jogo = False
         elif self.posicao_jogador == self.posicao_ouro:
+            #print("Você encontrou o ouro! Pegue-o e volte para a posição inicial para vencer.")
             self.ouro_pegado = True
             self.posicao_ouro = None
             self.pontuacao += 1000
         if self.posicao_jogador == (0, 0) and self.ouro_pegado:
+            #print("Você voltou para a posição inicial com o ouro! Você venceu!")
             self.pontuacao += 1000
+            #self.fim_jogo = True
             if self.jogo_normal:
                 self.fim_jogo = True
             else:
@@ -125,6 +130,8 @@ class WumpusMundo:
             percepcao_msg += "Você vê um brilho radiante! "
         if percepcoes["brisa suave"]:
             percepcao_msg += "Você sente uma brisa suave! "
+        #if percepcao_msg:
+            #print(percepcao_msg)
 
     def verificar_vizinhanca(self):
         percepcoes = self._checar_vizinhanca(self.posicao_jogador)
@@ -153,6 +160,9 @@ class WumpusMundo:
         print()
 
 class Agente:
+
+    
+
     def __init__(self, mundo):
         self.mundo = mundo
         self.posicao = (0, 0)
@@ -176,86 +186,127 @@ class AlgoritmoGenetico:
         self.mundo = mundo
         self.populacao = self.inicializar_populacao()
         self.melhor_individuo = None
-        self.melhor_fitness_por_geracao = []
-        self.pior_fitness_por_geracao = []
 
     def inicializar_populacao(self):
         populacao = []
         for _ in range(self.tamanho_populacao):
             tamanho_mundo = self.mundo.tamanho
-            caminho = [random.choice(["cima", "baixo", "esquerda", "direita"]) for _ in range(tamanho_mundo * tamanho_mundo)]
-            populacao.append(caminho)
+            media = (tamanho_mundo + 10) / 2
+            desvio_padrao = abs((tamanho_mundo - 5) / 2)  # Garantir que o desvio padrão seja positivo
+            tamanho_caminho = 200# int(np.clip(np.random.normal(media, desvio_padrao), 2, pow(tamanho_mundo, 2)))
+            caminho = [random.choice(['cima', 'baixo', 'esquerda', 'direita']) for _ in range(tamanho_caminho)]
+            populacao.append({'caminho': caminho, 'pontuacao': 1})  # Inicialização da pontuação para evitar zero
+
         return populacao
 
-    def avaliar_individuo(self, individuo):
+    def avaliar(self, individuo):
         self.mundo.reset()
+        self.mundo.jogo_AG()
         agente = Agente(self.mundo)
-        for movimento in individuo:
+
+        for movimento in individuo['caminho']:
             fim_jogo = agente.mover(movimento)
             if fim_jogo:
                 break
 
-        if self.mundo.posicao_jogador == (0, 0) and self.mundo.ouro_pegado:
-            return self.mundo.pontuacao
-        else:
-            # Penalidade para não retornar à posição inicial com o ouro
-            return self.mundo.pontuacao - 500
+        individuo['pontuacao'] = agente.score
 
     def selecionar_pais(self):
-        pontuacoes = [self.avaliar_individuo(individuo) for individuo in self.populacao]
-        # Adiciona um valor base para garantir que todas as pontuações sejam positivas
-        base = abs(min(pontuacoes)) + 1
-        pesos = [p + base for p in pontuacoes]
-        selecionados = random.choices(self.populacao, k=2, weights=pesos)
-        return selecionados
+        pais = []
 
+        for _ in range(2):  # Seleciona dois pais
+            # Seleciona aleatoriamente dois indivíduos da população para o torneio
+            participantes = random.sample(self.populacao, k=2)
+            
+            # Escolhe o participante com melhor pontuação
+            vencedor = max(participantes, key=lambda x: x['pontuacao'])
+            
+            pais.append(vencedor)
+
+        return pais
+###########################################
     def crossover(self, pai1, pai2):
-        ponto_corte = random.randint(1, len(pai1) - 1)
-        filho1 = pai1[:ponto_corte] + pai2[ponto_corte:]
-        filho2 = pai2[:ponto_corte] + pai1[ponto_corte:]
+        if random.random() > self.taxa_crossover:
+            return pai1, pai2
+
+        if len(pai1['caminho']) < 3 or len(pai2['caminho']) < 3:
+            return pai1, pai2  # Retorna os pais inalterados se qualquer um dos caminhos for muito curto
+
+        # Seleciona dois pontos de corte aleatórios
+        ponto_corte1 = random.randint(1, min(len(pai1['caminho']), len(pai2['caminho'])) - 2)
+        ponto_corte2 = random.randint(ponto_corte1 + 1, min(len(pai1['caminho']), len(pai2['caminho'])) - 1)
+
+        # Cria os filhos combinando os caminhos dos pais nos pontos de corte
+        filho1 = {
+            'caminho': pai1['caminho'][:ponto_corte1] + pai2['caminho'][ponto_corte1:ponto_corte2] + pai1['caminho'][ponto_corte2:], 
+            'pontuacao': 0
+        }
+        filho2 = {
+            'caminho': pai2['caminho'][:ponto_corte1] + pai1['caminho'][ponto_corte1:ponto_corte2] + pai2['caminho'][ponto_corte2:], 
+            'pontuacao': 0
+        }
+
         return filho1, filho2
 
+
     def mutacao(self, individuo):
-        for i in range(len(individuo)):
-            if random.random() < self.taxa_mutacao:
-                individuo[i] = random.choice(["cima", "baixo", "esquerda", "direita"])
-        return individuo
+        if random.random() < self.taxa_mutacao:
+            # Seleciona dois pontos de mutação diferentes no cromossomo
+            ponto1 = random.randint(0, len(individuo['caminho']) - 1)
+            ponto2 = random.randint(0, len(individuo['caminho']) - 1)
+            
+            # Garante que ponto1 é menor que ponto2
+            if ponto1 > ponto2:
+                ponto1, ponto2 = ponto2, ponto1
+            
+            # Inverte os genes entre ponto1 e ponto2
+            individuo['caminho'][ponto1:ponto2+1] = individuo['caminho'][ponto1:ponto2+1][::-1]
+        
+        # Adiciona novos genes aleatórios ao cromossomo com uma certa probabilidade
+        if random.random() < self.taxa_mutacao:
+            # Decide quantos genes adicionar
+            num_novos_genes = random.randint(1, 3)  # Por exemplo, adiciona de 1 a 3 novos genes
+            novos_genes = [random.choice(['cima', 'baixo', 'esquerda', 'direita']) for _ in range(num_novos_genes)]
+            
+            # Insere os novos genes em posições aleatórias
+            for novo_gene in novos_genes:
+                posicao_insercao = random.randint(0, len(individuo['caminho']))
+                individuo['caminho'].insert(posicao_insercao, novo_gene)
+
+        
+###########################################            
+
+
+    def encontrar_melhor_individuo(self):
+        return max(self.populacao, key=lambda individuo: individuo['pontuacao'])
 
     def executar(self):
-        
+        melhor_fitness_por_geracao = []
 
         for geracao in range(self.geracoes):
             nova_populacao = []
-            while len(nova_populacao) < self.tamanho_populacao:
+
+            for _ in range(self.tamanho_populacao // 2):
                 pai1, pai2 = self.selecionar_pais()
-                if random.random() < self.taxa_crossover:
-                    filho1, filho2 = self.crossover(pai1, pai2)
-                else:
-                    filho1, filho2 = pai1, pai2
+                filho1, filho2 = self.crossover(pai1, pai2)
 
-                filho1 = self.mutacao(filho1)
-                filho2 = self.mutacao(filho2)
+                self.mutacao(filho1)
+                self.mutacao(filho2)
 
-                nova_populacao.append(filho1)
-                nova_populacao.append(filho2)
+                self.avaliar(filho1)
+                self.avaliar(filho2)
 
+                nova_populacao.extend([filho1, filho2])
+
+            
             self.populacao = nova_populacao
-
-            melhor_individuo_geracao = max(self.populacao, key=self.avaliar_individuo)
-            if self.melhor_individuo is None or self.avaliar_individuo(melhor_individuo_geracao) > self.avaliar_individuo(self.melhor_individuo):
-                self.melhor_individuo = melhor_individuo_geracao
-
-            melhor_pontuacao = self.avaliar_individuo(melhor_individuo_geracao)
-            self.melhor_fitness_por_geracao.append(melhor_pontuacao)
-
-            pior_individuo = min(self.populacao, key=self.avaliar_individuo)
-            pior_pontuacao = self.avaliar_individuo(pior_individuo)
-            self.pior_fitness_por_geracao.append(pior_pontuacao)
-
-            #print(f"Geração {geracao + 1}: Melhor pontuação = {melhor_pontuacao}")
+            melhor_individuo = self.encontrar_melhor_individuo()
+            melhor_fitness_por_geracao.append(melhor_individuo['pontuacao'])
+            
+            print(f"Geração {geracao + 1}: Melhor pontuação = {melhor_individuo['pontuacao']}")
 
             esquema = []
-            for caminho in melhor_individuo_geracao:
+            for caminho in melhor_individuo['caminho']:
                 if caminho == 'cima':
                     esquema.append('↑')
                 elif caminho == 'baixo':
@@ -265,14 +316,12 @@ class AlgoritmoGenetico:
                 elif caminho == 'direita':
                     esquema.append('→')
 
-            #print(f"Caminho: {esquema}")
+            print(f"Caminho: {esquema}")
 
-            pior_individuo = min(self.populacao, key=self.avaliar_individuo)
-            pior_pontuacao = self.avaliar_individuo(pior_individuo)
-            #print(f"Geração {geracao + 1}: Pior Pontuação: {pior_pontuacao}")
-
+            pior_individuo = min(self.populacao, key=lambda x: x['pontuacao'])
+            print(f"Geração {geracao}: Pior Pontuação: {pior_individuo['pontuacao']}")
             esquema2 = []
-            for caminho in pior_individuo:
+            for caminho in pior_individuo['caminho']:
                 if caminho == 'cima':
                     esquema2.append('↑')
                 elif caminho == 'baixo':
@@ -282,51 +331,57 @@ class AlgoritmoGenetico:
                 elif caminho == 'direita':
                     esquema2.append('→')
 
-            #print(f"Caminho: {esquema2}")
+            print(f"Caminho: {esquema2}")
 
-        return self.melhor_individuo
+            
+            
 
-
-    def plotar(self, melhor_fitness_por_geracao, pior_fitness_por_geracao):
-        plt.plot(melhor_fitness_por_geracao, label="Melhor pontuação")
-        plt.plot(pior_fitness_por_geracao, label="Pior pontuação")
+        self.melhor_individuo = self.encontrar_melhor_individuo()
+        return melhor_fitness_por_geracao
+    
+    def plotar(self, fitness_por_geracao):
+        plt.plot(range(1, self.geracoes + 1), fitness_por_geracao)
         plt.xlabel("Gerações")
-        plt.ylabel("Pontuação")
+        plt.ylabel("Melhor Pontuação")
         plt.title("Evolução da Pontuação ao Longo das Gerações")
-        plt.legend()
-        plt.show()
+        plt.show() 
+        
 
+# Configuração do jogo
+tamanho = 10
+num_buracos = 4
 
+jogo = WumpusMundo(tamanho=tamanho, num_buracos=num_buracos)
 
-# Parâmetros do algoritmo genético
-tamanho_populacao = 50
-taxa_mutacao = 0.05
-taxa_crossover = 0.85
-geracoes = 1000
+#solicita os parametros para o algoritmo genetico
+"""print("Configuração do Algoritmo Genetico:")
+tamanho_populacao = int(input("Tamanho da População: "))
+taxa_mutacao = float(input("Taxa de Mutação: "))
+taxa_crossover = float(input("Taxa de Crossover: "))
+geracoes = int(input("Gerações: "))"""
 
-# Criação do mundo do Wumpus
-mundo = WumpusMundo(tamanho=10, num_buracos=5)
+#ag = AlgoritmoGenetico(tamanho_populacao=tamanho_populacao, taxa_mutacao=taxa_mutacao, taxa_crossover=taxa_crossover, geracoes=geracoes, mundo=jogo)
 
-# Execução do algoritmo genético
-ag = AlgoritmoGenetico(tamanho_populacao, taxa_mutacao, taxa_crossover, geracoes, mundo)
-melhor_solucao = ag.executar()
+ag = AlgoritmoGenetico(tamanho_populacao=50, taxa_mutacao=0.05, taxa_crossover=0.85, geracoes=1000, mundo=jogo)
 
-ag.plotar(ag.melhor_fitness_por_geracao, ag.pior_fitness_por_geracao)
+melhor_fitness_por_geracao = ag.executar()
 
-# Mostra a melhor solução encontrada
-print("Melhor solução encontrada:")
-print(melhor_solucao)
-print("Score da melhor solução:", ag.avaliar_individuo(melhor_solucao))
+# Mostrando os movimentos do melhor caminho encontrado pelo AG
+print("Melhor caminho encontrado pelo AG:")
+print(ag.melhor_individuo['caminho'])
+print("Score: ", ag.melhor_individuo['pontuacao'])
+
+ag.plotar(melhor_fitness_por_geracao)
 
 # Resetando o mundo
 ag.mundo.reset()
 
 # Simulando os movimentos do melhor caminho encontrado
 print("Simulação dos movimentos do melhor caminho encontrado:")
-mundo.mostrar()
-for movimento in melhor_solucao:
-    if mundo.fim_jogo:
+jogo.mostrar()
+for movimento in ag.melhor_individuo['caminho']:
+    if jogo.fim_jogo:
         break
     print(f"Movendo para: {movimento}")
-    mundo.mover(movimento)
-    mundo.mostrar()
+    jogo.mover(movimento)
+    jogo.mostrar() 
