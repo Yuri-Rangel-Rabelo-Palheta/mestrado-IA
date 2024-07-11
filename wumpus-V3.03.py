@@ -1,3 +1,4 @@
+import datetime
 import random
 
 from matplotlib import pyplot as plt
@@ -346,6 +347,20 @@ class AlgoritmoGenetico:
         plt.title("Evolução da Pontuação ao Longo das Gerações")
         plt.show() 
         
+def salvar_registro(jogo, caminho_arquivo="registro-V2"):
+    data_atual = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    caminho_arquivo = f"{caminho_arquivo}_{data_atual}.txt"
+    
+    with open(caminho_arquivo, "w") as file:
+        file.write(f"Tamanho do mapa: {jogo.tamanho}\n")
+        file.write(f"Posicao do Wumpus: {jogo.posicao_wumpus}\n")
+        file.write(f"Posicao do Ouro: {jogo.posicao_ouro}\n")
+        file.write(f"Posicoes dos Buracos: {jogo.posicao_buracos}\n")
+        file.write(f"Movimentos do Jogador:\n")
+        for movimento in jogo.historico:
+            file.write(f"{movimento}\n")
+
+    print(f"Registro salvo em {caminho_arquivo}")
 
 # Configuração do jogo
 tamanho = 10

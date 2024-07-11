@@ -583,7 +583,7 @@ class AgenteInteligente:
  
 
 # Função para salvar o registro da partida
-def salvar_registro(jogo, caminho_arquivo="registro"):
+def salvar_registro(jogo, caminho_arquivo="registro-V2"):
     data_atual = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     caminho_arquivo = f"{caminho_arquivo}_{data_atual}.txt"
     
