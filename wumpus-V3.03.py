@@ -1,3 +1,4 @@
+import datetime
 import random
 
 from matplotlib import pyplot as plt
@@ -17,6 +18,8 @@ class WumpusMundo:
         self.ouro_pegado = False
         self.wumpus_morto = False
         self.visitados = set()
+        self.historico = set()
+
 
         self.posicao_wumpus = self._gerar_posicao_aleatoria()
         self.posicao_ouro = self._gerar_posicao_aleatoria()
@@ -40,6 +43,8 @@ class WumpusMundo:
         self.ouro_pegado = False
         self.wumpus_morto = False
         self.visitados = set()
+
+        self.historico = set()
 
         self.jogo_normal = True
 
@@ -346,6 +351,20 @@ class AlgoritmoGenetico:
         plt.title("Evolução da Pontuação ao Longo das Gerações")
         plt.show() 
         
+def salvar_registro(jogo, caminho_arquivo="registro-V3"):
+    data_atual = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    caminho_arquivo = f"{caminho_arquivo}_{data_atual}.txt"
+    
+    with open(caminho_arquivo, "w") as file:
+        file.write(f"Tamanho do mapa: {jogo.tamanho}\n")
+        file.write(f"Posicao do Wumpus: {jogo.posicao_wumpus_inicial}\n")
+        file.write(f"Posicao do Ouro: {jogo.posicao_ouro_inicial}\n")
+        file.write(f"Posicoes dos Buracos: {jogo.posicao_buracos}\n")
+        file.write(f"Movimentos do Jogador:\n")
+        for movimento in jogo.visitados:
+            file.write(f"{movimento}\n")
+
+    print(f"Registro salvo em {caminho_arquivo}")
 
 # Configuração do jogo
 tamanho = 10
@@ -385,3 +404,6 @@ for movimento in ag.melhor_individuo['caminho']:
     print(f"Movendo para: {movimento}")
     jogo.mover(movimento)
     jogo.mostrar() 
+
+# Salvando o registro
+salvar_registro(jogo)

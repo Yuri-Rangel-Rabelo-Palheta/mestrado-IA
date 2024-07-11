@@ -27,6 +27,10 @@ class WumpusMundo:
         self.posicao_ouro = self._gerar_posicao_aleatoria()
         self.posicao_buracos = [self._gerar_posicao_aleatoria() for _ in range(num_buracos)]
 
+        self.posicao_wumpus_inicial = self.posicao_wumpus
+        self.posicao_ouro_inicial = self.posicao_ouro
+        self.posicao_buracos_inicial = self.posicao_buracos
+
     def _gerar_posicao_aleatoria(self):
         while True:
             posicao = (random.randint(0, self.tamanho - 1), random.randint(0, self.tamanho - 1))
@@ -583,14 +587,14 @@ class AgenteInteligente:
  
 
 # Função para salvar o registro da partida
-def salvar_registro(jogo, caminho_arquivo="registro"):
+def salvar_registro(jogo, caminho_arquivo="registro-V2"):
     data_atual = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     caminho_arquivo = f"{caminho_arquivo}_{data_atual}.txt"
     
     with open(caminho_arquivo, "w") as file:
         file.write(f"Tamanho do mapa: {jogo.tamanho}\n")
-        file.write(f"Posicao do Wumpus: {jogo.posicao_wumpus}\n")
-        file.write(f"Posicao do Ouro: {jogo.posicao_ouro}\n")
+        file.write(f"Posicao do Wumpus: {jogo.posicao_wumpus_inicial}\n")
+        file.write(f"Posicao do Ouro: {jogo.posicao_ouro_inicial}\n")
         file.write(f"Posicoes dos Buracos: {jogo.posicao_buracos}\n")
         file.write(f"Movimentos do Jogador:\n")
         for movimento in jogo.historico:
@@ -674,4 +678,7 @@ print("Pontuação média:", sum(resultados) / len(resultados))
 
 # Plotar os gráficos
 plotar_graficos(resultados)
+
+# Salvar o registro
+#salvar_registro(jogo)
 

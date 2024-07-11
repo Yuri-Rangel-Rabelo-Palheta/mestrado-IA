@@ -21,6 +21,10 @@ class WumpusMundo:
         self.posicao_ouro = self._gerar_posicao_aleatoria()
         self.posicao_buracos = [self._gerar_posicao_aleatoria() for _ in range(num_buracos)]
 
+        self.posicao_wumpus_inicial = self.posicao_wumpus
+        self.posicao_ouro_inicial = self.posicao_ouro
+        self.posicao_buracos_inicial = self.posicao_buracos
+
     def resetar(self):
         self.posicao_jogador = (0, 0)
         self.fim_jogo = False
@@ -224,7 +228,7 @@ class AgenteInteligente:
                 return
 
 # Função para salvar o registro da partida
-def salvar_registro(jogo_inicial,jogo, caminho_arquivo="registro"):
+def salvar_registro(jogo_inicial,jogo, caminho_arquivo="registro-V1"):
     data_atual = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     caminho_arquivo = f"{caminho_arquivo}_{data_atual}.txt"
     
