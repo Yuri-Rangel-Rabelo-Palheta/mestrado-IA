@@ -397,12 +397,26 @@ class AgenteInteligente:
 
         return casa_mais_proxima  # Retorna None se não encontrar a casa
     
+    def encontrar_casas_suspeitas_visitaveis(self):
+        casas_suspeitas_visitaveis = set()
+        
+        for casa in self.casa_suspeita:
+            if self.casa_segura.intersection(self.adjacentes(casa[0], casa[1])):
+                casas_suspeitas_visitaveis.add(casa)
+        
+        return casas_suspeitas_visitaveis
+
     def encontra_casa_suspeita_mais_proxima(self):
         posicao = self.posicao
         casa_mais_proxima = None
         distancia = float('inf')
         self.casa_segura.add(posicao)
         self.casa_suspeita.discard(posicao)
+
+        caos = False
+
+        if (random.randint(0, 1) == 0):
+            caos = True
 
         print("posicoes_potencialmente_perigosas (encontra_casa_suspeita): ", self.casa_suspeita)
         
@@ -428,6 +442,8 @@ class AgenteInteligente:
                 if aux < distancia:
                     distancia = aux
                     casa_mais_proxima = casa
+            if caos:
+                casa_mais_proxima = random.choice(list(self.encontrar_casas_suspeitas_visitaveis()))
         else:
             # Se não houver casas fora dos conjuntos de peso, busca a mais próxima nos conjuntos de peso, começando pelo peso 1
             for casa in self.casa_suspeita_peso_1:
@@ -435,6 +451,9 @@ class AgenteInteligente:
                 if aux < distancia:
                     distancia = aux
                     casa_mais_proxima = casa
+
+            if caos:
+                casa_mais_proxima = random.choice(list(self.encontrar_casas_suspeitas_visitaveis()))
             
             if casa_mais_proxima is None:
                 for casa in self.casa_suspeita_peso_2:
@@ -442,6 +461,7 @@ class AgenteInteligente:
                     if aux < distancia:
                         distancia = aux
                         casa_mais_proxima = casa
+
 
             if casa_mais_proxima is None:
                 for casa in self.casa_suspeita_peso_3:
@@ -456,6 +476,8 @@ class AgenteInteligente:
                     if aux < distancia:
                         distancia = aux
                         casa_mais_proxima = casa
+
+        
 
         return casa_mais_proxima  # Retorna None se não encontrar a casa
 
