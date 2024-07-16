@@ -19,6 +19,7 @@ class WumpusMundo:
         self.wumpus_morto = False
         self.visitados = set()
         self.historico = set()
+        self.winner = False
 
 
         self.posicao_wumpus = self._gerar_posicao_aleatoria()
@@ -47,6 +48,8 @@ class WumpusMundo:
         self.historico = set()
 
         self.jogo_normal = True
+
+        self.winner = False
 
     def jogo_AG(self):
         self.jogo_normal = False   
@@ -124,6 +127,7 @@ class WumpusMundo:
             #self.fim_jogo = True
             if self.jogo_normal:
                 self.fim_jogo = True
+                self.winner = True
             else:
                 self.fim_jogo = False
 
@@ -285,8 +289,9 @@ class AlgoritmoGenetico:
     def encontrar_melhor_individuo(self):
         return max(self.populacao, key=lambda individuo: individuo['pontuacao'])
 
-    def executar(self):
+    """ def executar(self):
         melhor_fitness_por_geracao = []
+        pior_individuo_por_geracao = []
 
         for geracao in range(self.geracoes):
             nova_populacao = []
@@ -321,9 +326,10 @@ class AlgoritmoGenetico:
                 elif caminho == 'direita':
                     esquema.append('→')
 
-            print(f"Caminho: {esquema}")
+            #print(f"Caminho: {esquema}")
 
             pior_individuo = min(self.populacao, key=lambda x: x['pontuacao'])
+            pior_individuo_por_geracao.append(pior_individuo['pontuacao'])
             print(f"Geração {geracao}: Pior Pontuação: {pior_individuo['pontuacao']}")
             esquema2 = []
             for caminho in pior_individuo['caminho']:
@@ -336,13 +342,51 @@ class AlgoritmoGenetico:
                 elif caminho == 'direita':
                     esquema2.append('→')
 
-            print(f"Caminho: {esquema2}")
+            #print(f"Caminho: {esquema2}")
 
             
             
 
         self.melhor_individuo = self.encontrar_melhor_individuo()
-        return melhor_fitness_por_geracao
+        return melhor_fitness_por_geracao, pior_individuo_por_geracao """
+    
+    def executar(self):
+        melhor_fitness_por_geracao = []
+        pior_individuo_por_geracao = []
+        media_fitness_por_geracao = []
+
+        for geracao in range(self.geracoes):
+            nova_populacao = []
+
+            for _ in range(self.tamanho_populacao // 2):
+                pai1, pai2 = self.selecionar_pais()
+                filho1, filho2 = self.crossover(pai1, pai2)
+
+                self.mutacao(filho1)
+                self.mutacao(filho2)
+
+                self.avaliar(filho1)
+                self.avaliar(filho2)
+
+                nova_populacao.extend([filho1, filho2])
+
+            self.populacao = nova_populacao
+            melhor_individuo = self.encontrar_melhor_individuo()
+            melhor_fitness_por_geracao.append(melhor_individuo['pontuacao'])
+            
+            #print(f"Geração {geracao + 1}: Melhor pontuação = {melhor_individuo['pontuacao']}")
+
+            pior_individuo = min(self.populacao, key=lambda x: x['pontuacao'])
+            pior_individuo_por_geracao.append(pior_individuo['pontuacao'])
+            #print(f"Geração {geracao + 1}: Pior Pontuação = {pior_individuo['pontuacao']}")
+
+            media_fitness = sum(individuo['pontuacao'] for individuo in self.populacao) / self.tamanho_populacao
+            media_fitness_por_geracao.append(media_fitness)
+            #print(f"Geração {geracao + 1}: Média Pontuação = {media_fitness}")
+
+        self.melhor_individuo = self.encontrar_melhor_individuo()
+        return melhor_fitness_por_geracao, pior_individuo_por_geracao, media_fitness_por_geracao
+
     
     def plotar(self, fitness_por_geracao):
         plt.plot(range(1, self.geracoes + 1), fitness_por_geracao)
@@ -383,7 +427,7 @@ geracoes = int(input("Gerações: "))"""
 
 ag = AlgoritmoGenetico(tamanho_populacao=50, taxa_mutacao=0.05, taxa_crossover=0.85, geracoes=1000, mundo=jogo)
 
-melhor_fitness_por_geracao = ag.executar()
+melhor_fitness_por_geracao, pior_individuo_por_geracao, media_fitness_por_geracao = ag.executar()
 
 # Mostrando os movimentos do melhor caminho encontrado pelo AG
 print("Melhor caminho encontrado pelo AG:")

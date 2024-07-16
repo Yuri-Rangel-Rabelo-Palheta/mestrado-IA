@@ -21,6 +21,7 @@ class WumpusMundo:
         self.wumpus_morto = False
         self.historico = {self.posicao_jogador}
         self.jogo_vencido = False
+        self.winner = False
 
         # Inicialização das posições
         self.posicao_wumpus = self._gerar_posicao_aleatoria()
@@ -102,6 +103,7 @@ class WumpusMundo:
             self.pontuacao += 1000
             self.fim_jogo = True
             self.jogo_vencido = True
+            self.winner = True
 
     def _exibir_percepcoes(self, percepcoes):
         percepcao_msg = ""
@@ -175,6 +177,7 @@ class WumpusMundo:
         self.ouro_pegado = False
         self.wumpus_morto = False
         self.historico = {self.posicao_jogador}
+        self.winner = False
 
     def gerar_mapa(self):
         mapa = [['-' for _ in range(self.tamanho)] for _ in range(self.tamanho)]
@@ -680,7 +683,7 @@ def plotar_graficos(resultados):
     plt.tight_layout()
     plt.show()
 
-# Entrada do usuário
+""" # Entrada do usuário
 tamanhoI = int(input("Digite o tamanho do mapa (3 ou mais): "))
 num_buracosI = int(input("Digite a quantidade de poços (1 ou mais): "))
 if num_buracosI > (tamanhoI * tamanhoI):
@@ -704,3 +707,4 @@ plotar_graficos(resultados)
 # Salvar o registro
 #salvar_registro(jogo)
 
+ """

@@ -16,6 +16,7 @@ class WumpusMundo:
         self.ouro_pegado = False
         self.wumpus_morto = False
         self.historico = set()
+        self.winner = False
 
         self.posicao_wumpus = self._gerar_posicao_aleatoria()
         self.posicao_ouro = self._gerar_posicao_aleatoria()
@@ -33,6 +34,7 @@ class WumpusMundo:
         self.ouro_pegado = False
         self.wumpus_morto = False
         self.historico = set()
+        self.winner = False
 
     def _gerar_posicao_aleatoria(self):
         while True:
@@ -77,22 +79,25 @@ class WumpusMundo:
         elif direcao == "direita" and y < self.tamanho - 1:
             self.posicao_jogador = (x, y + 1)
         else:
-            print("Movimento inválido!")
+            #print("Movimento inválido!")
             self.pontuacao -= 50
             return
         percepcoes = self._checar_vizinhanca(self.posicao_jogador)
         self._exibir_percepcoes(percepcoes)
         if self.posicao_jogador == self.posicao_wumpus or self.posicao_jogador in self.posicao_buracos:
-            print("Você morreu!")
+            #print("Você morreu!")
             self.fim_jogo = True
+            self.pontuacao -= 1000
         elif self.posicao_jogador == self.posicao_ouro:
-            print("Você encontrou o ouro! Pegue-o e volte para a posição inicial para vencer.")
+            #print("Você encontrou o ouro! Pegue-o e volte para a posição inicial para vencer.")
             self.ouro_pegado = True
             self.posicao_ouro = None
             self.pontuacao += 1000
-        if self.posicao_jogador == (0, 0) and (self.ouro_pegado or self.wumpus_morto):
-            print("Você voltou para a posição inicial com o ouro ou após matar o Wumpus! Você venceu!")
+        if self.posicao_jogador == (0, 0) and (self.ouro_pegado): # or self.wumpus_morto):
+            #print("Você voltou para a posição inicial com o ouro ou após matar o Wumpus! Você venceu!")
             self.fim_jogo = True
+            self.winner = True
+            self.pontuacao += 1000
 
         self.historico.add(self.posicao_jogador)
 
@@ -105,7 +110,8 @@ class WumpusMundo:
         if percepcoes["brisa suave"]:
             percepcao_msg += "Você sente uma brisa suave! "
         if percepcao_msg:
-            print(percepcao_msg)
+            #print(percepcao_msg)
+            pass
 
     def verificar_vizinhanca(self):
         percepcoes = self._checar_vizinhanca(self.posicao_jogador)
@@ -135,7 +141,7 @@ class WumpusMundo:
 
     def atirar(self, direcao):
         if not self.flecha_disponivel:
-            print("Você já usou sua flecha!")
+            #print("Você já usou sua flecha!")
             return
 
         self.flecha_disponivel = False
@@ -150,12 +156,12 @@ class WumpusMundo:
             y += 1
 
         if (x, y) == self.posicao_wumpus:
-            print("Você matou o Wumpus!")
+            #print("Você matou o Wumpus!")
             self.wumpus_morto = True
             self.posicao_wumpus = None
             self.pontuacao += 1000
         else:
-            print("Você errou o tiro!")
+            #print("Você errou o tiro!")
             self.pontuacao -= 1000
 
 class AgenteInteligente:
@@ -167,31 +173,31 @@ class AgenteInteligente:
 
         if percepcoes["cheiro horrível"]:
             if self.jogo.flecha_disponivel:
-                print("Agente atirando na direção do Wumpus!")
+                #print("Agente atirando na direção do Wumpus!")
                 self.atirar()
             else:
-                print("Agente evitando mover na direção do Wumpus!")
+                #print("Agente evitando mover na direção do Wumpus!")
                 self.mover_em_segurança()
         elif percepcoes["brilho radiante"]:
-            print("Agente movendo na direção do brilho radiante!")
+            #print("Agente movendo na direção do brilho radiante!")
             self.mover_para_ouro()
         elif percepcoes["brisa suave"]:
-            print("Agente evitando mover na direção da brisa!")
+            #print("Agente evitando mover na direção da brisa!")
             self.mover_em_segurança()
         else:
-            print("Agente movendo para qualquer direção segura!")
+            #print("Agente movendo para qualquer direção segura!")
             self.mover_em_segurança()
 
     def atirar(self):
         direcoes = ["cima", "baixo", "esquerda", "direita"]
         for direcao in direcoes:
             if self._atirar_na_direcao(direcao):
-                print("Você matou o Wumpus!")
+                #print("Você matou o Wumpus!")
                 self.jogo.wumpus_morto = True
                 self.jogo.posicao_wumpus = None
                 self.jogo.pontuacao += 1000
                 return
-        print("Você errou o tiro!")
+        #print("Você errou o tiro!")
         self.jogo.pontuacao -= 1000
 
     def _atirar_na_direcao(self, direcao):
@@ -297,7 +303,7 @@ def plotar_graficos(resultados):
     plt.tight_layout()
     plt.show()
 
-# Entrada do usuário
+""" # Entrada do usuário
 tamanhoI = int(input("Digite o tamanho do mapa (3 ou mais): "))
 num_buracosI = int(input("Digite a quantidade de poços (1 ou mais): "))
 if num_buracosI > (tamanhoI * tamanhoI):
@@ -313,7 +319,7 @@ if num_buracosI < 1:
 # Executar o jogo 20 vezes e imprimir resultados
 resultados = executar_vezes(tamanhoI, num_buracosI)
 print("Resultados das 20 execuções:", resultados)
-print("Pontuação média:", sum(resultados) / len(resultados))
+print("Pontuação média:", sum(resultados) / len(resultados)) """
 
 # Plotar os gráficos
-plotar_graficos(resultados)
+#plotar_graficos(resultados)
