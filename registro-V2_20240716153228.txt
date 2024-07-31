@@ -1,5 +1,0 @@
-Tamanho do mapa: 10
-Posicao do Wumpus: (4, 7)
-Posicao do Ouro: None
-Posicoes dos Buracos: [(5, 2), (1, 0), (9, 3), (1, 9)]
-Movimentos do Jogador:

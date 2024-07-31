@@ -702,9 +702,8 @@ print("Resultados das 20 execuções:", resultados)
 print("Pontuação média:", sum(resultados) / len(resultados))
 
 # Plotar os gráficos
-plotar_graficos(resultados)
+plotar_graficos(resultados) """
 
 # Salvar o registro
 #salvar_registro(jogo)
 
- """

@@ -111,6 +111,8 @@ class WumpusMundo:
         if self.posicao_jogador == self.posicao_wumpus or self.posicao_jogador in self.posicao_buracos:
             #print("Você morreu!")
             self.pontuacao -= 1000
+            #if(not self.jogo_normal):
+                #self.pontuacao -= 10000 
             #self.fim_jogo = True
             if self.jogo_normal:
                 self.fim_jogo = True
@@ -121,9 +123,13 @@ class WumpusMundo:
             self.ouro_pegado = True
             self.posicao_ouro = None
             self.pontuacao += 1000
+            #if(not self.jogo_normal):
+                #self.pontuacao += 10000
+            
         if self.posicao_jogador == (0, 0) and self.ouro_pegado:
             #print("Você voltou para a posição inicial com o ouro! Você venceu!")
             self.pontuacao += 1000
+            
             #self.fim_jogo = True
             if self.jogo_normal:
                 self.fim_jogo = True
@@ -202,11 +208,35 @@ class AlgoritmoGenetico:
             tamanho_mundo = self.mundo.tamanho
             media = (tamanho_mundo + 10) / 2
             desvio_padrao = abs((tamanho_mundo - 5) / 2)  # Garantir que o desvio padrão seja positivo
-            tamanho_caminho = 200# int(np.clip(np.random.normal(media, desvio_padrao), 2, pow(tamanho_mundo, 2)))
+            tamanho_caminho = 400# int(np.clip(np.random.normal(media, desvio_padrao), 2, pow(tamanho_mundo, 2)))
             caminho = [random.choice(['cima', 'baixo', 'esquerda', 'direita']) for _ in range(tamanho_caminho)]
             populacao.append({'caminho': caminho, 'pontuacao': 1})  # Inicialização da pontuação para evitar zero
 
         return populacao
+    
+    def avaliar1(self, individuo):
+        self.mundo.reset()
+        self.mundo.jogo_AG()
+        agente = Agente(self.mundo)
+        movimentos_efetuados = 0
+
+        for movimento in individuo['caminho']:
+            fim_jogo = agente.mover(movimento)
+            movimentos_efetuados += 1
+            if fim_jogo:
+                break
+
+        # Calcular a eficiência do caminho (proporção de movimentos válidos)
+        eficiencia_caminho = (len(self.mundo.visitados) / movimentos_efetuados) if movimentos_efetuados > 0 else 0
+
+        # Calcular a pontuação baseada em alcançar o ouro e sobreviver
+        if self.mundo.winner:
+            pontuacao_fitness = self.mundo.pontuacao + (eficiencia_caminho * 1000)
+        else:
+            pontuacao_fitness = self.mundo.pontuacao - (len(self.mundo.visitados) * 10)
+
+        individuo['pontuacao'] = pontuacao_fitness
+
 
     def avaliar(self, individuo):
         self.mundo.reset()
@@ -289,66 +319,6 @@ class AlgoritmoGenetico:
     def encontrar_melhor_individuo(self):
         return max(self.populacao, key=lambda individuo: individuo['pontuacao'])
 
-    """ def executar(self):
-        melhor_fitness_por_geracao = []
-        pior_individuo_por_geracao = []
-
-        for geracao in range(self.geracoes):
-            nova_populacao = []
-
-            for _ in range(self.tamanho_populacao // 2):
-                pai1, pai2 = self.selecionar_pais()
-                filho1, filho2 = self.crossover(pai1, pai2)
-
-                self.mutacao(filho1)
-                self.mutacao(filho2)
-
-                self.avaliar(filho1)
-                self.avaliar(filho2)
-
-                nova_populacao.extend([filho1, filho2])
-
-            
-            self.populacao = nova_populacao
-            melhor_individuo = self.encontrar_melhor_individuo()
-            melhor_fitness_por_geracao.append(melhor_individuo['pontuacao'])
-            
-            print(f"Geração {geracao + 1}: Melhor pontuação = {melhor_individuo['pontuacao']}")
-
-            esquema = []
-            for caminho in melhor_individuo['caminho']:
-                if caminho == 'cima':
-                    esquema.append('↑')
-                elif caminho == 'baixo':
-                    esquema.append('↓')
-                elif caminho == 'esquerda':
-                    esquema.append('←')
-                elif caminho == 'direita':
-                    esquema.append('→')
-
-            #print(f"Caminho: {esquema}")
-
-            pior_individuo = min(self.populacao, key=lambda x: x['pontuacao'])
-            pior_individuo_por_geracao.append(pior_individuo['pontuacao'])
-            print(f"Geração {geracao}: Pior Pontuação: {pior_individuo['pontuacao']}")
-            esquema2 = []
-            for caminho in pior_individuo['caminho']:
-                if caminho == 'cima':
-                    esquema2.append('↑')
-                elif caminho == 'baixo':
-                    esquema2.append('↓')
-                elif caminho == 'esquerda':
-                    esquema2.append('←')
-                elif caminho == 'direita':
-                    esquema2.append('→')
-
-            #print(f"Caminho: {esquema2}")
-
-            
-            
-
-        self.melhor_individuo = self.encontrar_melhor_individuo()
-        return melhor_fitness_por_geracao, pior_individuo_por_geracao """
     
     def executar(self):
         melhor_fitness_por_geracao = []
@@ -395,7 +365,7 @@ class AlgoritmoGenetico:
         plt.title("Evolução da Pontuação ao Longo das Gerações")
         plt.show() 
         
-def salvar_registro(jogo, caminho_arquivo="registro-V2"):
+def salvar_registro(jogo, caminho_arquivo="registro-V3"):
     data_atual = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     caminho_arquivo = f"{caminho_arquivo}_{data_atual}.txt"
     
@@ -412,9 +382,10 @@ def salvar_registro(jogo, caminho_arquivo="registro-V2"):
 
 # Configuração do jogo
 tamanho = 10
-num_buracos = 4
+num_buracos = 25
 
 jogo = WumpusMundo(tamanho=tamanho, num_buracos=num_buracos)
+
 
 #solicita os parametros para o algoritmo genetico
 """print("Configuração do Algoritmo Genetico:")

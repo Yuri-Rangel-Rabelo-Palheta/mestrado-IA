@@ -100,40 +100,41 @@ for tamanho, buraco, pos_buracos, pos_wumpus, pos_ouro in loc_elementos:
     jogo = agente_v3.WumpusMundo(tamanho=tamanho, num_buracos=int((tamanho * tamanho) * buraco))
     jogo.reset()
 
-    # Setando os valores iniciais
-    jogo.posicao_buracos = pos_buracos
-    jogo.posicao_wumpus = pos_wumpus
-    jogo.posicao_ouro = pos_ouro
+    for i in range(quantidade_execucoes):
+        # Setando os valores iniciais
+        jogo.posicao_buracos = pos_buracos
+        jogo.posicao_wumpus = pos_wumpus
+        jogo.posicao_ouro = pos_ouro
 
-    agente = agente_v3.AlgoritmoGenetico(tamanho_populacao=50, taxa_mutacao=0.05, taxa_crossover=0.85, geracoes=1000, mundo=jogo)
-    
-    melhor_fitness_por_geracao, pior_fitness_por_geracao, media_fitness_por_geracao = agente.executar()
+        agente = agente_v3.AlgoritmoGenetico(tamanho_populacao=50, taxa_mutacao=0.05, taxa_crossover=0.85, geracoes=1000, mundo=jogo)
+        
+        melhor_fitness_por_geracao, pior_fitness_por_geracao, media_fitness_por_geracao = agente.executar()
 
-    #print("Melhor caminho encontrado pelo AG:")
-    #print(agente.melhor_individuo['caminho'])
-    #print("Score: ", agente.melhor_individuo['pontuacao'])
-    
-    agente.mundo.reset()
-    for movimento in agente.melhor_individuo['caminho']:
-        if jogo.fim_jogo:
-            break
-        jogo.mover(movimento)
+        #print("Melhor caminho encontrado pelo AG:")
+        #print(agente.melhor_individuo['caminho'])
+        #print("Score: ", agente.melhor_individuo['pontuacao'])
+        
+        agente.mundo.reset()
+        for movimento in agente.melhor_individuo['caminho']:
+            if jogo.fim_jogo:
+                break
+            jogo.mover(movimento)
 
-    # Plotando os resultados do agente_v3 para a configuração atual do mapa
-    geracoes = list(range(len(melhor_fitness_por_geracao)))
+        # Plotando os resultados do agente_v3 para a configuração atual do mapa
+        geracoes = list(range(len(melhor_fitness_por_geracao)))
 
-    plt.figure(figsize=(12, 6))
+        plt.figure(figsize=(12, 6))
 
-    plt.plot(geracoes, melhor_fitness_por_geracao, label='Melhor Fitness')
-    plt.plot(geracoes, pior_fitness_por_geracao, label='Pior Fitness')
-    plt.plot(geracoes, media_fitness_por_geracao, label='Média Fitness')
+        plt.plot(geracoes, melhor_fitness_por_geracao, label='Melhor Fitness')
+        plt.plot(geracoes, pior_fitness_por_geracao, label='Pior Fitness')
+        plt.plot(geracoes, media_fitness_por_geracao, label='Média Fitness')
 
-    plt.xlabel('Gerações')
-    plt.ylabel('Fitness')
-    plt.title(f'Desempenho do Algoritmo Genético - Tamanho: {tamanho}, Buracos/Tamanho: {buraco}')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+        plt.xlabel('Gerações')
+        plt.ylabel('Fitness')
+        plt.title(f'Desempenho do Algoritmo Genético - Tamanho: {tamanho}, Buracos/Tamanho: {buraco}')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
 
 # Preparando os dados para plotagem
 rodadas = list(range(quantidade_execucoes))
